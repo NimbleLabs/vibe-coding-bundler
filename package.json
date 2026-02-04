@@ -1,0 +1,95 @@
+{
+  "name": "vibe-coding-bundler",
+  "version": "1.0.0",
+  "description": "Browser-based JavaScript bundler using esbuild-wasm with import map support",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "browser": "./dist/index.browser.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.browser.js"
+      },
+      "node": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    }
+  },
+  "bin": {
+    "vibe-bundler": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
+  },
+  "keywords": [
+    "bundler",
+    "esbuild",
+    "esbuild-wasm",
+    "wasm",
+    "browser",
+    "import-map",
+    "esm",
+    "javascript",
+    "typescript",
+    "vite",
+    "webpack",
+    "rollup"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "esbuild-wasm": "^0.20.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "commander": "^12.0.0",
+    "glob": "^10.3.10",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "commander": ">=10.0.0",
+    "glob": ">=9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "commander": {
+      "optional": true
+    },
+    "glob": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

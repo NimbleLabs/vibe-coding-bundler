@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vibe-coding-bundler Demo</title>
+  <!-- Import map for esbuild-wasm (required by vibe-coding-bundler) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "esbuild-wasm": "https://unpkg.com/esbuild-wasm@0.20.2/esm/browser.min.js"
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+    }
+
+    textarea {
+      flex: 1;
+      background: #0f0f23;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #eee;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      padding: 12px;
+      resize: none;
+      min-height: 200px;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #4a9eff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    button {
+      background: #4a9eff;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 10px 24px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #3a8eef;
+    }
+
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #333;
+    }
+
+    button.secondary:hover {
+      background: #444;
+    }
+
+    .output-panel {
+      grid-column: span 2;
+    }
+
+    .output {
+      background: #0f0f23;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow: auto;
+      max-height: 400px;
+      min-height: 200px;
+    }
+
+    .output.error {
+      border-color: #ff4444;
+      color: #ff6666;
+    }
+
+    .output.success {
+      border-color: #44ff44;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #888;
+    }
+
+    .status-dot.ready {
+      background: #44ff44;
+    }
+
+    .status-dot.loading {
+      background: #ffaa00;
+      animation: pulse 1s infinite;
+    }
+
+    .status-dot.error {
+      background: #ff4444;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .tab {
+      background: #333;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      color: #888;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 8px 16px;
+    }
+
+    .tab.active {
+      background: #0f0f23;
+      color: #fff;
+    }
+
+    .options {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .options label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .options input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    .options select {
+      background: #333;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #eee;
+      padding: 4px 8px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 800px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .output-panel {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>vibe-coding-bundler</h1>
+  <p class="subtitle">Browser-based JavaScript bundler using esbuild-wasm</p>
+
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Initializing...</span>
+  </div>
+
+  <div class="container">
+    <div class="panel">
+      <h2>Source Code</h2>
+      <textarea id="sourceCode" spellcheck="false">// Entry point: /src/index.ts
+import { greet } from './utils';
+import { format } from 'date-fns';
+
+const message = greet('World');
+const today = format(new Date(), 'yyyy-MM-dd');
+
+console.log(message);
+console.log('Today is:', today);
+
+export { message, today };</textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Additional Files</h2>
+      <textarea id="additionalFiles" spellcheck="false">// File: /src/utils.ts
+export function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+
+export function add(a: number, b: number): number {
+  return a + b;
+}</textarea>
+    </div>
+
+    <div class="panel" style="grid-column: span 2;">
+      <h2>Import Map</h2>
+      <textarea id="importMap" spellcheck="false" style="min-height: 120px;">{
+  "imports": {
+    "date-fns": "https://esm.sh/date-fns@3.3.1",
+    "date-fns/": "https://esm.sh/date-fns@3.3.1/"
+  }
+}</textarea>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="buildBtn" disabled>Build</button>
+    <button id="runBtn" class="secondary" disabled>Run Output</button>
+    <div class="options">
+      <label>
+        <input type="checkbox" id="minify">
+        Minify
+      </label>
+      <label>
+        <input type="checkbox" id="sourcemap" checked>
+        Sourcemap
+      </label>
+      <label>
+        Format:
+        <select id="format">
+          <option value="esm" selected>ESM</option>
+          <option value="iife">IIFE</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="panel output-panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="output">Output</button>
+      <button class="tab" data-tab="metafile">Metafile</button>
+      <button class="tab" data-tab="console">Console</button>
+    </div>
+    <div id="outputContent" class="output"></div>
+  </div>
+
+  <script type="module">
+    // Import the bundler from CDN or local build
+    // In production, you would use: import { createBundler, initialize } from 'vibe-coding-bundler';
+    // For this demo, we'll import from the built file
+
+    let bundler = null;
+    let lastResult = null;
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const buildBtn = document.getElementById('buildBtn');
+    const runBtn = document.getElementById('runBtn');
+    const outputContent = document.getElementById('outputContent');
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        updateOutput(tab.dataset.tab);
+      });
+    });
+
+    function updateOutput(tabName) {
+      if (!lastResult) {
+        outputContent.textContent = 'No build output yet. Click "Build" to bundle your code.';
+        outputContent.className = 'output';
+        return;
+      }
+
+      if (tabName === 'output') {
+        if (lastResult.errors.length > 0) {
+          outputContent.textContent = lastResult.errors.map(e => e.text).join('\n\n');
+          outputContent.className = 'output error';
+        } else {
+          const files = Object.entries(lastResult.outputFiles);
+          outputContent.textContent = files.map(([name, content]) =>
+            `// === ${name} ===\n${content}`
+          ).join('\n\n');
+          outputContent.className = 'output success';
+        }
+      } else if (tabName === 'metafile') {
+        if (lastResult.metafile) {
+          outputContent.textContent = JSON.stringify(lastResult.metafile, null, 2);
+        } else {
+          outputContent.textContent = 'No metafile available.';
+        }
+        outputContent.className = 'output';
+      } else if (tabName === 'console') {
+        outputContent.textContent = consoleOutput.join('\n') || 'No console output. Click "Run Output" to execute the bundled code.';
+        outputContent.className = 'output';
+      }
+    }
+
+    let consoleOutput = [];
+
+    function setStatus(status, text) {
+      statusDot.className = 'status-dot ' + status;
+      statusText.textContent = text;
+    }
+
+    async function initBundler() {
+      setStatus('loading', 'Loading bundler...');
+
+      try {
+        // Try to load from local build
+        // Path works when serving from project root (e.g., `npx serve .`)
+        let module;
+        try {
+          // Try absolute path first (when serving from project root)
+          module = await import('/dist/index.browser.js');
+        } catch (e1) {
+          try {
+            // Try relative path (when serving from examples/browser)
+            module = await import('../../dist/index.browser.js');
+          } catch (e2) {
+            // If local build not available, show error
+            setStatus('error', 'Bundler not found. Run "npm run build" first.');
+            outputContent.textContent = 'Error: Could not load the bundler.\n\nPlease run:\n  1. npm run build\n  2. npx serve . (from project root)\n  3. Open http://localhost:3000/examples/browser/';
+            outputContent.className = 'output error';
+            return;
+          }
+        }
+
+        const { createBundler, initialize } = module;
+
+        setStatus('loading', 'Initializing esbuild-wasm...');
+        await initialize();
+
+        bundler = createBundler({
+          fetcher: async (url) => {
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const contents = await response.text();
+            return { contents };
+          },
+        });
+
+        setStatus('ready', 'Ready');
+        buildBtn.disabled = false;
+      } catch (error) {
+        setStatus('error', 'Initialization failed');
+        outputContent.textContent = `Error: ${error.message}`;
+        outputContent.className = 'output error';
+      }
+    }
+
+    async function build() {
+      if (!bundler) return;
+
+      buildBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatus('loading', 'Building...');
+      consoleOutput = [];
+
+      try {
+        // Parse source code and additional files
+        const sourceCode = document.getElementById('sourceCode').value;
+        const additionalFilesText = document.getElementById('additionalFiles').value;
+        const importMapText = document.getElementById('importMap').value;
+
+        // Build the virtual file system
+        const files = {
+          '/src/index.ts': sourceCode,
+        };
+
+        // Parse additional files (simple format: // File: /path)
+        const fileBlocks = additionalFilesText.split(/\/\/\s*File:\s*/);
+        for (const block of fileBlocks) {
+          if (!block.trim()) continue;
+          const lines = block.split('\n');
+          const pathLine = lines[0].trim();
+          if (pathLine) {
+            const content = lines.slice(1).join('\n');
+            files[pathLine] = content;
+          }
+        }
+
+        // Parse import map
+        let importMap;
+        try {
+          importMap = JSON.parse(importMapText);
+        } catch (e) {
+          throw new Error(`Invalid import map JSON: ${e.message}`);
+        }
+
+        // Get build options
+        const minify = document.getElementById('minify').checked;
+        const sourcemap = document.getElementById('sourcemap').checked;
+        const format = document.getElementById('format').value;
+
+        // Run the build
+        const result = await bundler.bundle(
+          '/src/index.ts',
+          files,
+          importMap,
+          {
+            format,
+            minify,
+            sourcemap: sourcemap ? 'inline' : false,
+            metafile: true,
+          }
+        );
+
+        lastResult = result;
+
+        if (result.errors.length > 0) {
+          setStatus('error', `Build failed with ${result.errors.length} error(s)`);
+        } else {
+          const fileCount = Object.keys(result.outputFiles).length;
+          setStatus('ready', `Built ${fileCount} file(s)`);
+          runBtn.disabled = false;
+        }
+
+        updateOutput('output');
+        document.querySelector('.tab[data-tab="output"]').click();
+      } catch (error) {
+        setStatus('error', 'Build failed');
+        outputContent.textContent = `Error: ${error.message}`;
+        outputContent.className = 'output error';
+        lastResult = { errors: [{ text: error.message }], outputFiles: {} };
+      } finally {
+        buildBtn.disabled = false;
+      }
+    }
+
+    function runOutput() {
+      if (!lastResult || lastResult.errors.length > 0) return;
+
+      consoleOutput = [];
+
+      // Create a custom console
+      const customConsole = {
+        log: (...args) => {
+          consoleOutput.push(args.map(a =>
+            typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
+          ).join(' '));
+          updateOutput('console');
+        },
+        error: (...args) => {
+          consoleOutput.push('[ERROR] ' + args.join(' '));
+          updateOutput('console');
+        },
+        warn: (...args) => {
+          consoleOutput.push('[WARN] ' + args.join(' '));
+          updateOutput('console');
+        },
+      };
+
+      try {
+        // Get the output code
+        let code = Object.values(lastResult.outputFiles)[0];
+
+        // Strip export statements for execution in Function context
+        // This handles: export { x, y }, export default x, export const x = ...
+        code = code
+          .replace(/export\s*\{[^}]*\}\s*;?/g, '')  // export { x, y };
+          .replace(/export\s+default\s+/g, '')      // export default
+          .replace(/export\s+(const|let|var|function|class)\s+/g, '$1 ');  // export const x
+
+        // Create a function that runs the code with custom console
+        const fn = new Function('console', code);
+        fn(customConsole);
+
+        document.querySelector('.tab[data-tab="console"]').click();
+      } catch (error) {
+        consoleOutput.push(`[RUNTIME ERROR] ${error.message}`);
+        document.querySelector('.tab[data-tab="console"]').click();
+      }
+    }
+
+    // Event listeners
+    buildBtn.addEventListener('click', build);
+    runBtn.addEventListener('click', runOutput);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!buildBtn.disabled) build();
+      }
+    });
+
+    // Initialize
+    initBundler();
+  </script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Email Editor - Live Template Builder</title>
+    <!-- Import map for esbuild-wasm -->
+    <script type="importmap">
+      {
+        "imports": {
+          "esbuild-wasm": "https://unpkg.com/esbuild-wasm@0.20.2/esm/browser.min.js"
+        }
+      }
+    </script>
+    <!-- CodeMirror for the editor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/jsx/jsx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Header */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 18px;
+      }
+
+      .logo svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .template-select {
+        padding: 8px 12px;
+        background: #334155;
+        border: 1px solid #475569;
+        border-radius: 6px;
+        color: #e2e8f0;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .template-select:hover {
+        background: #3f4f63;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+      }
+
+      .btn-secondary {
+        background: #334155;
+        color: #e2e8f0;
+        border: 1px solid #475569;
+      }
+
+      .btn-secondary:hover {
+        background: #3f4f63;
+      }
+
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+
+      .btn.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+      }
+
+      /* Main Layout */
+      .main {
+        display: flex;
+        height: calc(100vh - 57px);
+      }
+
+      /* Editor Panel */
+      .editor-panel {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #334155;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+        font-size: 13px;
+        font-weight: 500;
+        color: #94a3b8;
+      }
+
+      .editor-container {
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .CodeMirror {
+        height: 100%;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      /* Preview Panel */
+      .preview-panel {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        background: #0f172a;
+      }
+
+      .preview-tabs {
+        display: flex;
+        gap: 4px;
+      }
+
+      .preview-tab {
+        padding: 6px 12px;
+        background: transparent;
+        border: none;
+        color: #64748b;
+        font-size: 13px;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .preview-tab:hover {
+        color: #94a3b8;
+      }
+
+      .preview-tab.active {
+        background: #334155;
+        color: #e2e8f0;
+      }
+
+      .preview-container {
+        flex: 1;
+        padding: 16px;
+        overflow: auto;
+      }
+
+      .preview-frame-wrapper {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        height: 100%;
+      }
+
+      .preview-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      .html-output {
+        display: none;
+        height: 100%;
+        background: #1e293b;
+        border-radius: 8px;
+        overflow: auto;
+      }
+
+      .html-output.visible {
+        display: block;
+      }
+
+      .html-output pre {
+        padding: 16px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #a5f3fc;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .preview-frame-wrapper.hidden {
+        display: none;
+      }
+
+      /* Device Toggle */
+      .device-toggle {
+        display: flex;
+        gap: 4px;
+        background: #1e293b;
+        padding: 4px;
+        border-radius: 6px;
+      }
+
+      .device-btn {
+        padding: 6px 10px;
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .device-btn:hover {
+        color: #94a3b8;
+      }
+
+      .device-btn.active {
+        background: #334155;
+        color: #e2e8f0;
+      }
+
+      .device-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Mobile Preview */
+      .preview-frame-wrapper.mobile {
+        max-width: 375px;
+        margin: 0 auto;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        background: #1e293b;
+        border-top: 1px solid #334155;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+      }
+
+      .status-dot.error {
+        background: #ef4444;
+      }
+
+      .status-dot.compiling {
+        background: #eab308;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      /* Loading Overlay */
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: #0f172a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        transition: opacity 0.3s;
+      }
+
+      .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid #334155;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .loading-text {
+        margin-top: 16px;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+
+      /* Error Display */
+      .error-display {
+        display: none;
+        padding: 16px;
+        background: #451a1a;
+        border: 1px solid #dc2626;
+        border-radius: 8px;
+        margin: 16px;
+        color: #fca5a5;
+        font-family: monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+      }
+
+      .error-display.visible {
+        display: block;
+      }
+
+      /* Copy notification */
+      .copy-notification {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #22c55e;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.3s;
+        pointer-events: none;
+      }
+
+      .copy-notification.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loading-text">Initializing bundler...</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          React Email Editor
+        </div>
+        <select class="template-select" id="template-select">
+          <option value="welcome">Welcome Email</option>
+          <option value="receipt">Order Receipt</option>
+          <option value="newsletter">Newsletter</option>
+          <option value="password-reset">Password Reset</option>
+          <option value="notification">Notification</option>
+        </select>
+      </div>
+      <div class="header-right">
+        <div class="device-toggle">
+          <button class="device-btn active" id="desktop-btn" title="Desktop Preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+            </svg>
+          </button>
+          <button class="device-btn" id="mobile-btn" title="Mobile Preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2"/>
+              <path d="M12 18h.01"/>
+            </svg>
+          </button>
+        </div>
+        <button class="btn btn-secondary" id="copy-html-btn">Copy HTML</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Editor Panel -->
+      <div class="editor-panel">
+        <div class="panel-header">
+          <span>email.tsx</span>
+          <span id="compile-status">Ready</span>
+        </div>
+        <div class="editor-container">
+          <textarea id="code-editor"></textarea>
+        </div>
+      </div>
+
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="panel-header">
+          <div class="preview-tabs">
+            <button class="preview-tab active" id="preview-tab">Preview</button>
+            <button class="preview-tab" id="html-tab">HTML</button>
+          </div>
+        </div>
+        <div class="preview-container">
+          <div class="error-display" id="error-display"></div>
+          <div class="preview-frame-wrapper" id="preview-wrapper">
+            <iframe class="preview-frame" id="preview-frame"></iframe>
+          </div>
+          <div class="html-output" id="html-output">
+            <pre id="html-code"></pre>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Ready</span>
+      </div>
+      <span>vibe-coding-bundler + react-email</span>
+    </div>
+
+    <!-- Copy Notification -->
+    <div class="copy-notification" id="copy-notification">HTML copied to clipboard!</div>
+
+    <script type="module" src="bundler-loader.js"></script>
+  </body>
+</html>

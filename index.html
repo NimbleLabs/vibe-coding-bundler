@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibe-coding-bundler - Browser-based JavaScript Bundler</title>
+    <meta name="description" content="A powerful browser-based JavaScript bundler using esbuild-wasm. Compile React, TypeScript, and JSX at runtime." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .card-hover {
+        transition: all 0.2s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased">
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">⚡</span>
+          <span class="font-semibold text-lg">vibe-coding-bundler</span>
+        </div>
+        <a
+          href="https://github.com/anthropics/vibe-coding-bundler"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/>
+          </svg>
+          <span class="text-sm font-medium">GitHub</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-20 px-6">
+      <div class="max-w-4xl mx-auto text-center">
+        <h1 class="text-5xl font-bold tracking-tight mb-6">
+          <span class="gradient-text">Browser-based</span> JavaScript Bundler
+        </h1>
+        <p class="text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+          Compile React, TypeScript, and JSX at runtime using esbuild-wasm.
+          Perfect for live coding environments, AI-generated applications, and interactive playgrounds.
+        </p>
+        <div class="flex items-center justify-center gap-4">
+          <a
+            href="#examples"
+            class="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+          >
+            View Examples
+          </a>
+          <a
+            href="https://github.com/anthropics/vibe-coding-bundler#readme"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-3 bg-white text-slate-700 border border-slate-300 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+          >
+            Documentation
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="py-12 px-6 border-y border-slate-200 bg-white">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="text-center">
+            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Lightning Fast</h3>
+            <p class="text-slate-600 text-sm">Powered by esbuild-wasm for near-instant compilation in the browser.</p>
+          </div>
+          <div class="text-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Virtual File System</h3>
+            <p class="text-slate-600 text-sm">Load entire projects into memory with multi-file support and imports.</p>
+          </div>
+          <div class="text-center">
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">CDN Import Maps</h3>
+            <p class="text-slate-600 text-sm">Resolve npm packages from CDNs like esm.sh with zero configuration.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Examples Grid -->
+    <section id="examples" class="py-20 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold mb-4">Examples</h2>
+          <p class="text-slate-600 max-w-xl mx-auto">
+            Explore these demos to see vibe-coding-bundler in action. Each example compiles and runs entirely in your browser.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Laud CRM -->
+          <a href="examples/laud-crm/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Laud CRM</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Full-featured CRM application with contacts, deals, pipeline, and activities. Built with React Router and Zustand.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">React</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Router</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Zustand</span>
+            </div>
+          </a>
+
+          <!-- Tremor Dashboard -->
+          <a href="examples/tremor/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Tremor Dashboard</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Analytics dashboard with charts, tables, and data visualization using Tremor's React component library.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Tremor</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Charts</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Radix UI</span>
+            </div>
+          </a>
+
+          <!-- React Email -->
+          <a href="examples/react-email/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">React Email Editor</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Live email template builder with real-time preview. Edit JSX and see rendered HTML instantly.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">React Email</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">CodeMirror</span>
+            </div>
+          </a>
+
+          <!-- React Flow -->
+          <a href="examples/react-flow/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">React Flow</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Interactive node-based diagrams and flowcharts. Drag, connect, and customize nodes in real-time.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">React Flow</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Diagrams</span>
+            </div>
+          </a>
+
+          <!-- Excalidraw -->
+          <a href="examples/excalidraw/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Excalidraw</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Virtual whiteboard for sketching hand-drawn diagrams. The popular drawing tool, bundled at runtime.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Excalidraw</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Canvas</span>
+            </div>
+          </a>
+
+          <!-- Novel Editor -->
+          <a href="examples/novel/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Novel Editor</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Notion-style WYSIWYG editor with slash commands, rich text formatting, and a beautiful UI.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Novel</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Tiptap</span>
+            </div>
+          </a>
+
+          <!-- shadcn/ui -->
+          <a href="examples/shadcn-ui/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">shadcn/ui</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Beautiful, accessible UI components built with Radix UI and Tailwind CSS. Copy-paste ready.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">shadcn</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Radix</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Tailwind</span>
+            </div>
+          </a>
+
+          <!-- RAC + Spectrum -->
+          <a href="examples/rac-spectrum-tailwind/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">React Aria + Spectrum</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Adobe's accessible React Aria Components styled with Spectrum design tokens and Tailwind.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">React Aria</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Spectrum</span>
+            </div>
+          </a>
+
+          <!-- Basic Browser -->
+          <a href="examples/browser/" class="card-hover bg-white rounded-xl border border-slate-200 p-6 block">
+            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Basic Demo</h3>
+            <p class="text-slate-600 text-sm mb-4">
+              Simple getting-started example showing the core bundler API with a minimal React component.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">React</span>
+              <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Basic</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white py-12 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">⚡</span>
+            <span class="font-semibold">vibe-coding-bundler</span>
+          </div>
+          <p class="text-sm text-slate-500">
+            Built for AI-powered development environments
+          </p>
+          <div class="flex items-center gap-6">
+            <a
+              href="https://github.com/anthropics/vibe-coding-bundler"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://www.npmjs.com/package/vibe-coding-bundler"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              npm
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
