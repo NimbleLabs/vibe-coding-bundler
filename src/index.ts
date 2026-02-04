@@ -117,6 +117,14 @@ export {
 export { LRUCache, createCacheKey } from './cache';
 export type { LRUCacheOptions } from './cache';
 
+// Import map generation utilities
+export {
+  generateImportMap,
+  generateCdnUrl,
+  stripVersionRange,
+} from './importMapGenerator';
+export type { GenerateImportMapOptions, PackageJson } from './importMapGenerator';
+
 // Plugin utilities
 export {
   PluginOrchestrator,

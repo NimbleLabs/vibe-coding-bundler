@@ -3,6 +3,10 @@
  *
  * This script loads all React Flow example source files and compiles them
  * at runtime using vibe-coding-bundler (esbuild-wasm based).
+ *
+ * Import maps are dynamically generated from package.json dependencies,
+ * showcasing how AI-generated projects can be bundled without manual
+ * configuration.
  */
 
 // =============================================================================
@@ -159,42 +163,28 @@ const FILE_MANIFEST = [
 ];
 
 // =============================================================================
-// IMPORT MAP - External dependencies mapped to CDN URLs
+// IMPORT MAP CONFIGURATION
 // =============================================================================
 
-const IMPORT_MAP = {
-  imports: {
-    // React
-    'react': 'https://esm.sh/react@18.2.0',
-    'react/': 'https://esm.sh/react@18.2.0/',
-    'react/jsx-runtime': 'https://esm.sh/react@18.2.0/jsx-runtime',
-    'react/jsx-dev-runtime': 'https://esm.sh/react@18.2.0/jsx-dev-runtime',
+// Dev dependencies to exclude from import map (not needed at runtime)
+const EXCLUDE_PACKAGES = [
+  '@cypress/skip-test',
+  '@types/dagre',
+  '@types/react',
+  '@types/react-dom',
+  '@vitejs/plugin-react',
+  '@vitejs/plugin-react-swc',
+  'cypress',
+  'cypress-real-events',
+  'start-server-and-test',
+  'typescript',
+  'vite',
+];
 
-    // React DOM
-    'react-dom': 'https://esm.sh/react-dom@18.2.0',
-    'react-dom/': 'https://esm.sh/react-dom@18.2.0/',
-    'react-dom/client': 'https://esm.sh/react-dom@18.2.0/client',
-
-    // React Router
-    'react-router-dom': 'https://esm.sh/react-router-dom@6.18.0?external=react',
-
-    // XYFlow / React Flow
-    '@xyflow/react': 'https://esm.sh/@xyflow/react@12.10.0?external=react,react-dom',
-    '@xyflow/react/': 'https://esm.sh/@xyflow/react@12.10.0&external=react,react-dom/',
-    '@xyflow/system': 'https://esm.sh/@xyflow/system@0.0.74',
-
-    // State management
-    'zustand': 'https://esm.sh/zustand@4.4.6?external=react',
-    'zustand/': 'https://esm.sh/zustand@4.4.6&external=react/',
-    '@reduxjs/toolkit': 'https://esm.sh/@reduxjs/toolkit@2.2.3?external=react',
-    'react-redux': 'https://esm.sh/react-redux@9.1.1?external=react,react-dom',
-    'redux': 'https://esm.sh/redux@5.0.1',
-
-    // Utilities
-    'dagre': 'https://esm.sh/dagre@0.8.5',
-    'classcat': 'https://esm.sh/classcat@5.0.4',
-    'localforage': 'https://esm.sh/localforage@1.10.0',
-  }
+// Manual overrides for packages needing special handling
+const IMPORT_MAP_OVERRIDES = {
+  // @xyflow subpaths need externals in the URL
+  '@xyflow/react/': 'https://esm.sh/@xyflow/react@12.10.0&external=react,react-dom/',
 };
 
 // =============================================================================
@@ -339,10 +329,9 @@ async function loadSourceFiles() {
  * Applies necessary patches to source files
  */
 function patchSourceFiles(files) {
-  // Replace main.tsx with a simpler version that doesn't use react-router
-  // This avoids issues with BrowserRouter when loading from blob URLs
+  // Replace main.tsx with a sidebar-based UI using Tailwind classes
   files['/src/main.tsx'] = `
-import { StrictMode, useState, Suspense, lazy } from 'react';
+import { StrictMode, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 
@@ -372,69 +361,183 @@ import Provider from './examples/Provider';
 import A11y from './examples/A11y';
 import AddNodeOnEdgeDrop from './examples/AddNodeOnEdgeDrop';
 
-const examples = [
-  { name: 'Basic', component: Basic },
-  { name: 'Overview', component: Overview },
-  { name: 'A11y (Accessibility)', component: A11y },
-  { name: 'Add Node on Edge Drop', component: AddNodeOnEdgeDrop },
-  { name: 'Backgrounds', component: Backgrounds },
-  { name: 'Custom Node', component: CustomNode },
-  { name: 'Drag and Drop', component: DragNDrop },
-  { name: 'Easy Connect', component: EasyConnect },
-  { name: 'Edges', component: Edges },
-  { name: 'Edge Types', component: EdgeTypes },
-  { name: 'Empty', component: Empty },
-  { name: 'Floating Edges', component: FloatingEdges },
-  { name: 'Hidden', component: Hidden },
-  { name: 'Interaction', component: Interaction },
-  { name: 'Layouting', component: Layouting },
-  { name: 'Node Resizer', component: NodeResizer },
-  { name: 'Node Toolbar', component: NodeToolbar },
-  { name: 'Provider', component: Provider },
-  { name: 'Save/Restore', component: SaveRestore },
-  { name: 'Stress Test', component: Stress },
-  { name: 'Subflow', component: Subflow },
-  { name: 'Update Node', component: UpdateNode },
-  { name: 'useReactFlow', component: UseReactFlow },
-  { name: 'Validation', component: Validation },
+// Categorized examples for better organization
+const categories = [
+  {
+    name: 'Getting Started',
+    examples: [
+      { id: 'basic', name: 'Basic', component: Basic },
+      { id: 'overview', name: 'Overview', component: Overview },
+      { id: 'empty', name: 'Empty', component: Empty },
+    ]
+  },
+  {
+    name: 'Nodes',
+    examples: [
+      { id: 'custom-node', name: 'Custom Node', component: CustomNode },
+      { id: 'node-resizer', name: 'Node Resizer', component: NodeResizer },
+      { id: 'node-toolbar', name: 'Node Toolbar', component: NodeToolbar },
+      { id: 'update-node', name: 'Update Node', component: UpdateNode },
+      { id: 'hidden', name: 'Hidden Nodes', component: Hidden },
+    ]
+  },
+  {
+    name: 'Edges',
+    examples: [
+      { id: 'edges', name: 'Custom Edges', component: Edges },
+      { id: 'edge-types', name: 'Edge Types', component: EdgeTypes },
+      { id: 'floating-edges', name: 'Floating Edges', component: FloatingEdges },
+    ]
+  },
+  {
+    name: 'Interaction',
+    examples: [
+      { id: 'interaction', name: 'Interaction', component: Interaction },
+      { id: 'drag-n-drop', name: 'Drag and Drop', component: DragNDrop },
+      { id: 'easy-connect', name: 'Easy Connect', component: EasyConnect },
+      { id: 'add-node-edge', name: 'Add Node on Edge Drop', component: AddNodeOnEdgeDrop },
+      { id: 'validation', name: 'Validation', component: Validation },
+    ]
+  },
+  {
+    name: 'Layout & Styling',
+    examples: [
+      { id: 'backgrounds', name: 'Backgrounds', component: Backgrounds },
+      { id: 'layouting', name: 'Layouting (Dagre)', component: Layouting },
+      { id: 'subflow', name: 'Subflows', component: Subflow },
+    ]
+  },
+  {
+    name: 'State & Data',
+    examples: [
+      { id: 'save-restore', name: 'Save & Restore', component: SaveRestore },
+      { id: 'provider', name: 'Provider', component: Provider },
+      { id: 'use-reactflow', name: 'useReactFlow Hook', component: UseReactFlow },
+    ]
+  },
+  {
+    name: 'Other',
+    examples: [
+      { id: 'a11y', name: 'Accessibility (A11y)', component: A11y },
+      { id: 'stress', name: 'Stress Test', component: Stress },
+    ]
+  }
 ];
 
-function App() {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const CurrentExample = examples[selectedIndex].component;
+// Flatten for lookup
+const allExamples = categories.flatMap(c => c.examples);
+
+function Sidebar({ selectedId, onSelect, searchQuery, onSearchChange }) {
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    const query = searchQuery.toLowerCase();
+    return categories
+      .map(cat => ({
+        ...cat,
+        examples: cat.examples.filter(ex =>
+          ex.name.toLowerCase().includes(query)
+        )
+      }))
+      .filter(cat => cat.examples.length > 0);
+  }, [searchQuery]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <header style={{
-        padding: '10px 16px',
-        borderBottom: '1px solid #eee',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        background: '#fff',
-      }}>
-        <strong style={{ fontSize: '14px' }}>React Flow Examples</strong>
-        <select
-          value={selectedIndex}
-          onChange={(e) => setSelectedIndex(Number(e.target.value))}
-          style={{
-            padding: '6px 12px',
-            fontSize: '14px',
-            borderRadius: '4px',
-            border: '1px solid #ddd',
-          }}
-        >
-          {examples.map((ex, i) => (
-            <option key={ex.name} value={i}>{ex.name}</option>
-          ))}
-        </select>
-        <span style={{ color: '#666', fontSize: '12px' }}>
-          Compiled at runtime with vibe-coding-bundler
-        </span>
-      </header>
-      <div style={{ flex: 1, position: 'relative' }}>
-        <CurrentExample />
+    <aside className="w-64 h-full bg-zinc-50 border-r border-zinc-200 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-zinc-200">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-5 h-5 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <h1 className="font-semibold text-zinc-900 text-sm">React Flow</h1>
+        </div>
+        {/* Search */}
+        <div className="relative">
+          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search examples..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 placeholder-zinc-400"
+          />
+        </div>
       </div>
+
+      {/* Example List */}
+      <nav className="flex-1 overflow-y-auto sidebar-scroll p-2">
+        {filteredCategories.map((category) => (
+          <div key={category.name} className="mb-3">
+            <h2 className="px-2 py-1 text-xs font-medium text-zinc-500 uppercase tracking-wide">
+              {category.name}
+            </h2>
+            <ul className="space-y-0.5">
+              {category.examples.map((example) => (
+                <li key={example.id}>
+                  <button
+                    onClick={() => onSelect(example.id)}
+                    className={\`w-full text-left px-2 py-1.5 text-sm rounded-md transition-colors \${
+                      selectedId === example.id
+                        ? 'bg-zinc-200 text-zinc-900 font-medium'
+                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                    }\`}
+                  >
+                    {example.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        {filteredCategories.length === 0 && (
+          <p className="px-2 py-4 text-sm text-zinc-400 text-center">No examples found</p>
+        )}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-zinc-200 bg-zinc-100/50">
+        <p className="text-xs text-zinc-400 text-center">
+          Compiled at runtime with{' '}
+          <a href="https://github.com/NimbleLabs/vibe-coding-bundler" target="_blank" rel="noopener" className="text-zinc-500 hover:text-zinc-700 underline">
+            vibe-coding-bundler
+          </a>
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+function App() {
+  const [selectedId, setSelectedId] = useState('basic');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const selectedExample = allExamples.find(ex => ex.id === selectedId) || allExamples[0];
+  const CurrentExample = selectedExample.component;
+
+  return (
+    <div className="flex h-full">
+      <Sidebar
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Example Header */}
+        <header className="h-12 px-4 flex items-center justify-between border-b border-zinc-200 bg-white flex-shrink-0">
+          <h2 className="font-medium text-zinc-900">{selectedExample.name}</h2>
+          <span className="text-xs text-zinc-400">
+            {allExamples.length} examples
+          </span>
+        </header>
+        {/* Example Content */}
+        <div className="flex-1 relative">
+          <CurrentExample />
+        </div>
+      </main>
     </div>
   );
 }
@@ -486,43 +589,64 @@ function processCSSFiles(files) {
 
 async function main() {
   try {
-    updateProgress(5, 'Loading bundler...');
+    updateProgress(5, 'Loading bundler and package.json...');
 
-    // Import the bundler
+    // Import the bundler and load package.json in parallel
     let module;
+    let packageJson;
     let loadError = null;
 
-    try {
-      // Try absolute path first (when serving from project root)
-      module = await import('/dist/index.browser.js');
-    } catch (e1) {
-      console.error('Failed to load from /dist/index.browser.js:', e1);
-      loadError = e1;
+    const [moduleResult, packageJsonResult] = await Promise.allSettled([
+      // Try to import the bundler
+      (async () => {
+        try {
+          return await import('/dist/index.browser.js');
+        } catch (e1) {
+          console.error('Failed to load from /dist/index.browser.js:', e1);
+          try {
+            return await import('../../dist/index.browser.js');
+          } catch (e2) {
+            console.error('Failed to load from ../../dist/index.browser.js:', e2);
+            throw e2;
+          }
+        }
+      })(),
+      // Load package.json
+      fetch('./package.json').then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      }),
+    ]);
 
-      try {
-        // Try relative path (when serving from examples/react-flow)
-        module = await import('../../dist/index.browser.js');
-        loadError = null; // Clear error if second attempt works
-      } catch (e2) {
-        console.error('Failed to load from ../../dist/index.browser.js:', e2);
-        loadError = e2;
-      }
-    }
-
-    if (!module) {
-      const errorMsg = loadError ?
-        `Error: ${loadError.message}\n\nStack: ${loadError.stack || 'N/A'}` :
-        'Unknown error loading module';
+    if (moduleResult.status === 'rejected') {
+      loadError = moduleResult.reason;
+      const errorMsg = `Error: ${loadError.message}\n\nStack: ${loadError.stack || 'N/A'}`;
       showError('Failed to Load Bundler', errorMsg);
       return;
     }
+    module = moduleResult.value;
 
-    const { createBundler, initialize } = module;
+    if (packageJsonResult.status === 'rejected') {
+      const errorMsg = `Error: ${packageJsonResult.reason.message}`;
+      showError('Failed to Load package.json', errorMsg);
+      return;
+    }
+    packageJson = packageJsonResult.value;
+
+    const { createBundler, initialize, generateImportMap } = module;
 
     updateProgress(10, 'Initializing esbuild-wasm...');
     await initialize();
 
-    updateProgress(15, 'Loading source files...');
+    updateProgress(15, 'Generating import map...');
+    const importMap = generateImportMap(packageJson, {
+      cdn: 'https://esm.sh',
+      exclude: EXCLUDE_PACKAGES,
+      overrides: IMPORT_MAP_OVERRIDES,
+    });
+    console.log('Generated import map:', importMap);
+
+    updateProgress(20, 'Loading source files...');
     let files = await loadSourceFiles();
 
     updateProgress(55, 'Patching source files...');
@@ -547,7 +671,7 @@ async function main() {
     const result = await bundler.bundle(
       '/src/main.tsx',
       files,
-      IMPORT_MAP,
+      importMap,
       {
         format: 'esm',
         minify: false,

@@ -6,6 +6,10 @@
  *
  * This demonstrates the use case where AI generates applications
  * and the platform compiles/bundles them at runtime in the browser.
+ *
+ * Import maps are dynamically generated from package.json dependencies,
+ * showcasing how AI-generated projects can be bundled without manual
+ * configuration.
  */
 
 // =============================================================================
@@ -51,31 +55,17 @@ const FILE_MANIFEST = [
   'pages/Activities.tsx',
 ];
 
-// =============================================================================
-// IMPORT MAP - External dependencies mapped to CDN URLs
-// =============================================================================
-
-const IMPORT_MAP = {
-  imports: {
-    // React
-    'react': 'https://esm.sh/react@18.2.0',
-    'react/': 'https://esm.sh/react@18.2.0/',
-    'react/jsx-runtime': 'https://esm.sh/react@18.2.0/jsx-runtime',
-    'react/jsx-dev-runtime': 'https://esm.sh/react@18.2.0/jsx-dev-runtime',
-
-    // React DOM
-    'react-dom': 'https://esm.sh/react-dom@18.2.0',
-    'react-dom/': 'https://esm.sh/react-dom@18.2.0/',
-    'react-dom/client': 'https://esm.sh/react-dom@18.2.0/client',
-
-    // React Router
-    'react-router-dom': 'https://esm.sh/react-router-dom@6.20.0?external=react,react-dom',
-
-    // Zustand
-    'zustand': 'https://esm.sh/zustand@4.4.7?external=react',
-    'zustand/': 'https://esm.sh/zustand@4.4.7/',
-  }
-};
+// Dev dependencies to exclude from import map (not needed at runtime)
+const EXCLUDE_PACKAGES = [
+  '@types/react',
+  '@types/react-dom',
+  '@vitejs/plugin-react',
+  'autoprefixer',
+  'postcss',
+  'tailwindcss',
+  'typescript',
+  'vite',
+];
 
 // =============================================================================
 // UI HELPERS
@@ -158,41 +148,63 @@ async function loadSourceFiles() {
 
 async function main() {
   try {
-    updateProgress(5, 'Loading bundler...');
+    updateProgress(5, 'Loading bundler and package.json...');
 
-    // Import the bundler
+    // Import the bundler and load package.json in parallel
     let module;
+    let packageJson;
     let loadError = null;
 
-    try {
-      module = await import('/dist/index.browser.js');
-    } catch (e1) {
-      console.error('Failed to load from /dist/index.browser.js:', e1);
-      loadError = e1;
+    const [moduleResult, packageJsonResult] = await Promise.allSettled([
+      // Try to import the bundler
+      (async () => {
+        try {
+          return await import('/dist/index.browser.js');
+        } catch (e1) {
+          console.error('Failed to load from /dist/index.browser.js:', e1);
+          try {
+            return await import('../../dist/index.browser.js');
+          } catch (e2) {
+            console.error('Failed to load from ../../dist/index.browser.js:', e2);
+            throw e2;
+          }
+        }
+      })(),
+      // Load package.json
+      fetch('./package.json').then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      }),
+    ]);
 
-      try {
-        module = await import('../../dist/index.browser.js');
-        loadError = null;
-      } catch (e2) {
-        console.error('Failed to load from ../../dist/index.browser.js:', e2);
-        loadError = e2;
-      }
-    }
-
-    if (!module) {
-      const errorMsg = loadError ?
-        `Error: ${loadError.message}\n\nStack: ${loadError.stack || 'N/A'}` :
-        'Unknown error loading module';
+    if (moduleResult.status === 'rejected') {
+      loadError = moduleResult.reason;
+      const errorMsg = `Error: ${loadError.message}\n\nStack: ${loadError.stack || 'N/A'}`;
       showError('Failed to Load Bundler', errorMsg);
       return;
     }
+    module = moduleResult.value;
 
-    const { createBundler, initialize } = module;
+    if (packageJsonResult.status === 'rejected') {
+      const errorMsg = `Error: ${packageJsonResult.reason.message}`;
+      showError('Failed to Load package.json', errorMsg);
+      return;
+    }
+    packageJson = packageJsonResult.value;
+
+    const { createBundler, initialize, generateImportMap } = module;
 
     updateProgress(10, 'Initializing esbuild-wasm...');
     await initialize();
 
-    updateProgress(15, 'Loading source files...');
+    updateProgress(15, 'Generating import map...');
+    const importMap = generateImportMap(packageJson, {
+      cdn: 'https://esm.sh',
+      exclude: EXCLUDE_PACKAGES,
+    });
+    console.log('Generated import map:', importMap);
+
+    updateProgress(20, 'Loading source files...');
     const files = await loadSourceFiles();
 
     updateProgress(60, 'Creating bundler...');
@@ -212,7 +224,7 @@ async function main() {
     const result = await bundler.bundle(
       '/src/main.tsx',
       files,
-      IMPORT_MAP,
+      importMap,
       {
         format: 'esm',
         minify: false,

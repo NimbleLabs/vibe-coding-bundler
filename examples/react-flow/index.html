@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>React Flow Examples (Runtime Bundled)</title>
+    <title>React Flow Examples</title>
     <!-- Pre-load xyflow styles -->
     <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.10.0/dist/style.css">
     <!-- Import map for esbuild-wasm (required by vibe-coding-bundler) -->
@@ -15,147 +15,180 @@
         }
       }
     </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              zinc: {
+                50: '#fafafa',
+                100: '#f4f4f5',
+                200: '#e4e4e7',
+                300: '#d4d4d8',
+                400: '#a1a1aa',
+                500: '#71717a',
+                600: '#52525b',
+                700: '#3f3f46',
+                800: '#27272a',
+                900: '#18181b',
+                950: '#09090b',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      * {
-        box-sizing: border-box;
-      }
-
+      * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #fafafa;
+        color: #18181b;
         height: 100vh;
-        background: #f8f9fa;
-        color: #333;
+        overflow: hidden;
       }
+      #root { height: 100%; }
 
-      #root {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+      /* Scrollbar styling */
+      .sidebar-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #d4d4d8;
+        border-radius: 3px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #a1a1aa;
       }
 
       /* Loading overlay */
       #loading-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        inset: 0;
+        background: #fafafa;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 9999;
-        color: white;
         transition: opacity 0.3s ease-out;
       }
-
       #loading-overlay.hidden {
         opacity: 0;
         pointer-events: none;
       }
 
-      .loading-title {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-
-      .loading-subtitle {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 32px;
-      }
-
-      .progress-container {
-        width: 300px;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
-        overflow: hidden;
-        margin-bottom: 16px;
-      }
-
-      .progress-bar {
-        height: 100%;
-        background: white;
-        border-radius: 3px;
-        transition: width 0.2s ease-out;
-        width: 0%;
-      }
-
-      .loading-status {
-        font-size: 13px;
-        opacity: 0.8;
-        text-align: center;
-        max-width: 400px;
-      }
-
-      .spinner {
-        width: 48px;
-        height: 48px;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top-color: white;
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e4e4e7;
+        border-top-color: #3f3f46;
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin-bottom: 24px;
       }
+      @keyframes spin { to { transform: rotate(360deg); } }
 
-      @keyframes spin {
-        to { transform: rotate(360deg); }
+      .loading-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #18181b;
+        margin-bottom: 6px;
+      }
+      .loading-subtitle {
+        font-size: 14px;
+        color: #71717a;
+        margin-bottom: 32px;
+      }
+      .progress-container {
+        width: 280px;
+        height: 4px;
+        background: #e4e4e7;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .progress-bar {
+        height: 100%;
+        background: #3f3f46;
+        border-radius: 2px;
+        transition: width 0.2s;
+        width: 0%;
+      }
+      .loading-status {
+        font-size: 13px;
+        color: #a1a1aa;
       }
 
-      /* Error state */
+      /* Error styling */
       .error-container {
-        background: rgba(255, 255, 255, 0.1);
+        background: #fef2f2;
+        border: 1px solid #fecaca;
         border-radius: 8px;
         padding: 24px;
         max-width: 600px;
         text-align: left;
       }
-
       .error-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
+        color: #dc2626;
         margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
       }
-
       .error-message {
-        font-family: monospace;
-        font-size: 13px;
-        background: rgba(0, 0, 0, 0.2);
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 12px;
+        background: #fff;
+        border: 1px solid #fecaca;
         padding: 12px;
-        border-radius: 4px;
+        border-radius: 6px;
         white-space: pre-wrap;
-        word-break: break-word;
         max-height: 300px;
         overflow: auto;
+        color: #7f1d1d;
       }
 
-      /* Badge */
-      .powered-by {
-        position: fixed;
-        bottom: 16px;
-        right: 16px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 11px;
-        z-index: 10000;
+      /* Default button styling for React Flow examples */
+      .react-flow button,
+      .react-flow-wrapper button,
+      [class*="react-flow"] button {
+        padding: 4px 10px;
+        margin: 2px;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: inherit;
+        color: #3f3f46;
+        background: #f4f4f5;
+        border: 1px solid #d4d4d8;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
       }
-
-      .powered-by a {
-        color: #9cf;
-        text-decoration: none;
+      .react-flow button:hover,
+      .react-flow-wrapper button:hover,
+      [class*="react-flow"] button:hover {
+        background: #e4e4e7;
+        border-color: #a1a1aa;
       }
-
-      .powered-by a:hover {
-        text-decoration: underline;
+      .react-flow button:active,
+      .react-flow-wrapper button:active,
+      [class*="react-flow"] button:active {
+        background: #d4d4d8;
+      }
+      .react-flow button:focus,
+      .react-flow-wrapper button:focus,
+      [class*="react-flow"] button:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #e4e4e7;
       }
     </style>
   </head>
@@ -163,17 +196,13 @@
     <div id="root"></div>
 
     <div id="loading-overlay">
-      <div class="spinner"></div>
+      <div class="loading-spinner"></div>
       <div class="loading-title">React Flow Examples</div>
       <div class="loading-subtitle">Compiling with vibe-coding-bundler</div>
       <div class="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
-      <div class="loading-status" id="loading-status">Initializing bundler...</div>
-    </div>
-
-    <div class="powered-by">
-      Compiled at runtime by <a href="https://github.com/anthropics/vibe-coding-bundler" target="_blank">vibe-coding-bundler</a>
+      <div class="loading-status" id="loading-status">Initializing...</div>
     </div>
 
     <script type="module" src="bundler-loader.js"></script>

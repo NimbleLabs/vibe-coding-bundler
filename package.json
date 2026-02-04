@@ -90,6 +90,10 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/NimbleLabs/vibe-coding-bundler.git"
+  },
+  "homepage": "https://www.nimblelabs.com/vibe-coding-bundler",
+  "bugs": {
+    "url": "https://github.com/NimbleLabs/vibe-coding-bundler/issues"
   }
 }

@@ -147,7 +147,7 @@ export default function App() {
           </a>
           {" | "}
           Compiled at runtime by{" "}
-          <a href="https://github.com/anthropics/vibe-coding-bundler" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/NimbleLabs/vibe-coding-bundler" target="_blank" rel="noopener noreferrer">
             vibe-coding-bundler
           </a>
         </span>

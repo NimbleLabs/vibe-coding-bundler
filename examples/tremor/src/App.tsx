@@ -620,7 +620,7 @@ export default function App() {
             </a>
             {" components (35+ components) | Compiled at runtime by "}
             <a
-              href="https://github.com/anthropics/vibe-coding-bundler"
+              href="https://github.com/NimbleLabs/vibe-coding-bundler"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:underline"
