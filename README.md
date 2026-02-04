@@ -20,6 +20,20 @@ A browser-based JavaScript bundler using [esbuild-wasm](https://esbuild.github.i
 npm install vibe-coding-bundler
 ```
 
+## Browser Demo
+
+A browser demo is included in the `examples/browser` directory:
+
+```bash
+# Build the library first
+npm run build
+
+# Serve the examples directory
+npx serve .
+```
+
+Open http://localhost:3000 to try the interactive bundler.
+
 ## Quick Start
 
 ### Browser Usage
@@ -297,20 +311,6 @@ interface BundleResult {
 ### `bundler.dispose()`
 
 Clean up resources and clear caches.
-
-## Browser Demo
-
-A browser demo is included in the `examples/browser` directory:
-
-```bash
-# Build the library first
-npm run build
-
-# Serve the examples directory
-npx serve examples/browser
-```
-
-Open http://localhost:3000 to try the interactive bundler.
 
 ## CLI Configuration
 
