@@ -40,7 +40,7 @@ let initPromise: Promise<void> | null = null;
 let isInitialized = false;
 
 /** Default WASM URL from unpkg CDN */
-const DEFAULT_WASM_URL = 'https://unpkg.com/esbuild-wasm@0.20.2/esbuild.wasm';
+const DEFAULT_WASM_URL = 'https://unpkg.com/esbuild-wasm@0.27.2/esbuild.wasm';
 
 /**
  * Initialize esbuild-wasm
